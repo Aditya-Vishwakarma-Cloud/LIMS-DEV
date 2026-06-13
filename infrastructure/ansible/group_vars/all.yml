@@ -1,0 +1,4 @@
+---
+# Global variables for all servers
+# Application settings
+app_name: "lims"

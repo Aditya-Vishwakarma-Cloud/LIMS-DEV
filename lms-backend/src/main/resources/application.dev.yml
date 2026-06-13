@@ -1,0 +1,40 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: lms-backend
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:pgadmin}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:e8a34e143ae0aee52c6a6a46a04dfb3670f1b20ae361e46829b67f55e31692dcce300ec047eef62fdad17c7457e85b0fb774f660b1720db2cb33e970f18da956}
+      # 15 minutes (in milliseconds)
+      expiration: ${JWT_EXPIRATION:900000}
+      # 7 days (in milliseconds)
+      refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+    rate-limit:
+      # Maximum login attempts allowed per IP within the window
+      max-attempts: ${LOGIN_MAX_ATTEMPTS:5}
+      # Rate limit window in minutes
+      window-minutes: ${LOGIN_LIMIT_WINDOW:15}

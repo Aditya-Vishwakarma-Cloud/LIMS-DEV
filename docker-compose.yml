@@ -1,0 +1,70 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: lims-db-dev
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pgadmin
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data
+    networks:
+      - lims_network_dev
+
+  backend:
+    image: maven:3.9.6-eclipse-temurin-17-alpine
+    container_name: lims-backend-dev
+    restart: always
+    working_dir: /app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=postgres
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=pgadmin
+      - JWT_SECRET=dd31024a0a07692cb8141c6190d05095d9a891784064006bb2ace1b5ea1f876542aba5b23f64d53926a8e61d41262605d80cd3a85255151af93324b28f565823
+      - JWT_EXPIRATION=900000
+      - JWT_REFRESH_EXPIRATION=604800000
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000
+    volumes:
+      - ./lms-backend:/app
+      - m2data:/root/.m2
+    command: mvn spring-boot:run
+    networks:
+      - lims_network_dev
+
+  frontend:
+    image: node:20-alpine
+    container_name: lims-frontend-dev
+    restart: always
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - BACKEND_API_URL=http://localhost:8080/api
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./lims-frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: sh -c "npm install && npm run dev"
+    networks:
+      - lims_network_dev
+
+volumes:
+  pgdata-dev:
+  m2data:
+
+networks:
+  lims_network_dev:
+    driver: bridge
