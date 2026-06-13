@@ -17,10 +17,9 @@ services:
       - lims_network
 
   backend:
-    image: programmingprobhet/lims-backend:prod-1.0.1
-    # build:
-    #   context: ./lms-backend
-    #   dockerfile: Dockerfile
+    build:
+      context: ./lms-backend
+      dockerfile: Dockerfile
     container_name: lims-backend
     restart: unless-stopped
     ports:
@@ -41,12 +40,11 @@ services:
       - lims_network
 
   frontend:
-    image: programmingprobhet/lims-frontend:prod-1.0.1
-    # build:
-    #   context: ./lims-frontend
-    #   dockerfile: Dockerfile
-    #   args:
-    #     - NEXT_PUBLIC_API_URL=/api
+    build:
+      context: ./lims-frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=/api
     container_name: lims-frontend
     restart: unless-stopped
     ports:
