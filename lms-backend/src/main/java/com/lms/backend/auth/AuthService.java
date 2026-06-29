@@ -10,7 +10,6 @@ import com.lms.backend.service.EmailService;
 import java.util.concurrent.ConcurrentHashMap;
 import com.lms.backend.entity.AccountStatus;
 import com.lms.backend.entity.Role;
-import com.lms.backend.entity.RoleName;
 import com.lms.backend.entity.User;
 import com.lms.backend.entity.RefreshToken;
 import com.lms.backend.exception.EmailAlreadyExistsException;
@@ -76,20 +75,13 @@ public class AuthService {
             throw new EmailAlreadyExistsException("Email is already registered: " + request.getEmail());
         }
 
-        Set<Role> roles = new HashSet<>();
+        Role role = null;
         if (request.getRoles() != null && !request.getRoles().isEmpty()) {
-            for (String roleNameStr : request.getRoles()) {
-                try {
-                    RoleName roleNameEnum = RoleName.valueOf(roleNameStr);
-                    roleRepository.findByName(roleNameEnum).ifPresent(roles::add);
-                } catch (IllegalArgumentException e) {
-                    log.warn("Invalid role name requested: {}", roleNameStr);
-                }
-            }
+            String roleNameStr = request.getRoles().iterator().next();
+            role = roleRepository.findByName(roleNameStr).orElse(null);
         }
-
-        if (roles.isEmpty()) {
-            roleRepository.findByName(RoleName.ROLE_CLIENT_VIEWER).ifPresent(roles::add);
+        if (role == null) {
+            role = roleRepository.findByName("ROLE_CLIENT_VIEWER").orElse(null);
         }
 
         User user = User.builder()
@@ -98,12 +90,12 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .status(AccountStatus.ACTIVE)
                 .deleted(false)
-                .roles(roles)
+                .role(role)
                 .build();
 
         User savedUser = userRepository.save(user);
-        auditLogService.log("USER_REGISTERED", savedUser.getEmail(), ipAddress, "Roles assigned: " + 
-                roles.stream().map(r -> r.getName().name()).collect(Collectors.joining(",")));
+        auditLogService.log("USER_REGISTERED", savedUser.getEmail(), ipAddress, "Role assigned: " + 
+                (role != null ? role.getName() : "None"));
 
         return mapToUserResponse(savedUser);
     }
@@ -289,9 +281,7 @@ public class AuthService {
                 .name(user.getName())
                 .email(user.getEmail())
                 .status(user.getStatus().name())
-                .roles(user.getRoles().stream()
-                        .map(role -> role.getName().name())
-                        .collect(Collectors.toSet()))
+                .roles(user.getRole() != null ? java.util.Set.of(user.getRole().getName()) : java.util.Collections.emptySet())
                 .build();
     }
 }

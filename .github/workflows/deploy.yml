@@ -1,0 +1,94 @@
+# name: CI/CD Pipeline
+
+# on:
+#   push:
+#     branches:
+#       - main
+
+# jobs:
+#   build-and-push:
+#     name: Build and Push Docker Images
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
+
+#       - name: Set up QEMU
+#         uses: docker/setup-qemu-action@v3
+
+#       - name: Set up Docker Buildx
+#         uses: docker/setup-buildx-action@v3
+
+#       - name: Log in to Docker Hub
+#         uses: docker/login-action@v3
+#         with:
+#           username: ${{ secrets.DOCKERHUB_USERNAME }}
+#           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+#       - name: Build and Push Backend Image
+#         uses: docker/build-push-action@v5
+#         with:
+#           context: ./lms-backend
+#           file: ./lms-backend/Dockerfile
+#           push: true
+#           tags: |
+#             ${{ secrets.DOCKERHUB_USERNAME }}/lims-backend:latest
+#             ${{ secrets.DOCKERHUB_USERNAME }}/lims-backend:${{ github.sha }}
+
+#       - name: Build and Push Frontend Image
+#         uses: docker/build-push-action@v5
+#         with:
+#           context: ./lims-frontend
+#           file: ./lims-frontend/Dockerfile
+#           push: true
+#           build-args: |
+#             NEXT_PUBLIC_API_URL=/api
+#           tags: |
+#             ${{ secrets.DOCKERHUB_USERNAME }}/lims-frontend:latest
+#             ${{ secrets.DOCKERHUB_USERNAME }}/lims-frontend:${{ github.sha }}
+
+#   deploy:
+#     name: Deploy to EC2
+#     runs-on: ubuntu-latest
+#     needs: build-and-push
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v4
+
+#       - name: Copy Docker Compose file to EC2
+#         uses: appleboy/scp-action@master
+#         with:
+#           host: ${{ secrets.EC2_HOST }}
+#           username: ${{ secrets.EC2_USERNAME }}
+#           key: ${{ secrets.EC2_SSH_KEY }}
+#           port: 22
+#           source: "docker-compose.deploy.yml"
+#           target: "~/lims-app"
+
+#       - name: Execute Remote SSH Commands to Deploy
+#         uses: appleboy/ssh-action@master
+#         env:
+#           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+#           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+#         with:
+#           host: ${{ secrets.EC2_HOST }}
+#           username: ${{ secrets.EC2_USERNAME }}
+#           key: ${{ secrets.EC2_SSH_KEY }}
+#           port: 22
+#           envs: DOCKERHUB_USERNAME,DOCKERHUB_TOKEN
+#           script: |
+#             # Navigate to deployment directory
+#             mkdir -p ~/lims-app
+#             cd ~/lims-app
+
+#             # Login to Docker Hub on EC2 to download the images
+#             echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+#             # Pull latest images
+#             docker compose -f docker-compose.deploy.yml pull
+
+#             # Restart containers with the updated images
+#             docker compose -f docker-compose.deploy.yml up -d --remove-orphans
+
+#             # Clean up old/dangling images to free disk space
+#             docker image prune -f

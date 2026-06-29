@@ -46,12 +46,7 @@ public class User extends BaseEntity {
     @Builder.Default
     private boolean deleted = false;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "user_roles",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-    @Builder.Default
-    private Set<Role> roles = new HashSet<>();
+    @jakarta.persistence.ManyToOne(fetch = FetchType.EAGER)
+    @jakarta.persistence.JoinColumn(name = "role_id")
+    private Role role;
 }

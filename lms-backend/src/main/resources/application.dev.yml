@@ -38,3 +38,6 @@ app:
       max-attempts: ${LOGIN_MAX_ATTEMPTS:5}
       # Rate limit window in minutes
       window-minutes: ${LOGIN_LIMIT_WINDOW:15}
+  email:
+    resend-api-key: ${RESEND_API_KEY:re_BMQDVeYN_166iqQ3dK6xiCq66Ay8vXqWv}
+    from-domain: ${EMAIL_FROM_DOMAIN:programmingprophet.site}

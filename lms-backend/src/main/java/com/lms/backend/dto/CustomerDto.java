@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -14,6 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class CustomerDto {
     private UUID id;
+    private String customerCode;
 
     @NotBlank(message = "Customer Name is required")
     private String customerName;
@@ -30,7 +32,7 @@ public class CustomerDto {
     private String block;
     private String blockReason;
     private String salutations;
-    private String contactPerson;
+    private String contactPerson; // Primary contact person name (simple legacy field)
     private String description;
     private String emailId;
     private String mobileNumber;
@@ -52,6 +54,16 @@ public class CustomerDto {
     private String alternateTelephoneNo;
     private String faxNo;
     private String alternateAddress;
+
+    // Contact Persons list
+    private UUID primaryContactId;
+    private String primaryContactName;
+    private List<ContactPersonDto> contactPersons;
+
+    // Optimized dashboard statistics
+    private Long totalProjects;
+    private Long totalWorkOrders;
+    private Long totalSamples;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

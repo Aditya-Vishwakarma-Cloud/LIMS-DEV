@@ -20,10 +20,18 @@ import lombok.Setter;
 @Builder
 public class Role extends BaseEntity {
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "name", unique = true, nullable = false, length = 50)
-    private RoleName name;
+    private String name;
 
     @Column(name = "description")
     private String description;
+
+    @jakarta.persistence.ManyToMany(fetch = jakarta.persistence.FetchType.EAGER)
+    @jakarta.persistence.JoinTable(
+        name = "role_permissions",
+        joinColumns = @jakarta.persistence.JoinColumn(name = "role_id"),
+        inverseJoinColumns = @jakarta.persistence.JoinColumn(name = "permission_id")
+    )
+    @Builder.Default
+    private java.util.Set<Permission> permissions = new java.util.HashSet<>();
 }

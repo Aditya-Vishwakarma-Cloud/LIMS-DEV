@@ -1,7 +1,12 @@
 package com.lms.backend.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,6 +14,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "customers")
@@ -19,6 +28,9 @@ import org.hibernate.annotations.SQLRestriction;
 @Builder
 @SQLRestriction("deleted = false")
 public class Customer extends BaseEntity {
+
+    @Column(name = "customer_code", unique = true, length = 50)
+    private String customerCode;
 
     @Column(name = "customer_name", nullable = false, length = 200)
     private String customerName;
@@ -127,7 +139,21 @@ public class Customer extends BaseEntity {
     @Column(name = "alternate_address", columnDefinition = "TEXT")
     private String alternateAddress;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "primary_contact_id")
+    private ContactPerson primaryContact;
+
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ContactPerson> contactPersons = new ArrayList<>();
+
     @Column(name = "deleted", nullable = false)
     @Builder.Default
     private boolean deleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by", length = 100)
+    private String deletedBy;
 }

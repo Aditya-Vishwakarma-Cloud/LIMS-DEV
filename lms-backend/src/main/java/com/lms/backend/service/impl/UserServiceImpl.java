@@ -6,7 +6,6 @@ import com.lms.backend.dto.UserResponse;
 import com.lms.backend.dto.PasswordUpdateRequest;
 import com.lms.backend.entity.AccountStatus;
 import com.lms.backend.entity.Role;
-import com.lms.backend.entity.RoleName;
 import com.lms.backend.entity.User;
 import com.lms.backend.exception.EmailAlreadyExistsException;
 import com.lms.backend.exception.ResourceNotFoundException;
@@ -70,20 +69,13 @@ public class UserServiceImpl implements UserService {
             throw new EmailAlreadyExistsException("Email is already registered: " + request.getEmail());
         }
 
-        Set<Role> roles = new HashSet<>();
-        if (request.getRoles() != null) {
-            for (String roleNameStr : request.getRoles()) {
-                try {
-                    RoleName roleNameEnum = RoleName.valueOf(roleNameStr);
-                    roleRepository.findByName(roleNameEnum).ifPresent(roles::add);
-                } catch (IllegalArgumentException e) {
-                    log.warn("Invalid role name requested: {}", roleNameStr);
-                }
-            }
+        Role role = null;
+        if (request.getRoles() != null && !request.getRoles().isEmpty()) {
+            String roleNameStr = request.getRoles().iterator().next();
+            role = roleRepository.findByName(roleNameStr).orElse(null);
         }
-
-        if (roles.isEmpty()) {
-            roleRepository.findByName(RoleName.ROLE_CLIENT_VIEWER).ifPresent(roles::add);
+        if (role == null) {
+            role = roleRepository.findByName("ROLE_CLIENT_VIEWER").orElse(null);
         }
 
         AccountStatus status = AccountStatus.ACTIVE;
@@ -99,7 +91,7 @@ public class UserServiceImpl implements UserService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .status(status)
                 .deleted(false)
-                .roles(roles)
+                .role(role)
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -122,19 +114,9 @@ public class UserServiceImpl implements UserService {
             log.warn("Invalid account status requested: {}", request.getStatus());
         }
 
-        Set<Role> roles = new HashSet<>();
-        if (request.getRoles() != null) {
-            for (String roleNameStr : request.getRoles()) {
-                try {
-                    RoleName roleNameEnum = RoleName.valueOf(roleNameStr);
-                    roleRepository.findByName(roleNameEnum).ifPresent(roles::add);
-                } catch (IllegalArgumentException e) {
-                    log.warn("Invalid role name requested: {}", roleNameStr);
-                }
-            }
-        }
-        if (!roles.isEmpty()) {
-            user.setRoles(roles);
+        if (request.getRoles() != null && !request.getRoles().isEmpty()) {
+            String roleNameStr = request.getRoles().iterator().next();
+            roleRepository.findByName(roleNameStr).ifPresent(user::setRole);
         }
 
         User updatedUser = userRepository.save(user);
@@ -167,15 +149,24 @@ public class UserServiceImpl implements UserService {
         log.info("Updated password for user: {}", user.getEmail());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserResponse> getActiveTechnicians() {
+        return userRepository.findByRoleAndStatusAndNotDeleted(
+                "ROLE_TECHNICIAN",
+                AccountStatus.ACTIVE
+        ).stream()
+        .map(this::mapToUserResponse)
+        .collect(Collectors.toList());
+    }
+
     private UserResponse mapToUserResponse(User user) {
         return UserResponse.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
                 .status(user.getStatus().name())
-                .roles(user.getRoles().stream()
-                        .map(role -> role.getName().name())
-                        .collect(Collectors.toSet()))
+                .roles(user.getRole() != null ? java.util.Set.of(user.getRole().getName()) : java.util.Collections.emptySet())
                 .build();
     }
 }

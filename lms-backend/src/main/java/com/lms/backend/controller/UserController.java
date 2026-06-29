@@ -19,30 +19,41 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('ROLE_SUPER_ADMIN', 'ROLE_ADMIN')")
+@PreAuthorize("isAuthenticated()")
 public class UserController {
 
     private final UserService userService;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('USER_VIEW')")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
         List<UserResponse> users = userService.getAllUsers();
         return ResponseEntity.ok(ApiResponse.success(users, "Users retrieved successfully"));
     }
 
+    @GetMapping("/technicians")
+    @PreAuthorize("hasAnyAuthority('USER_VIEW', 'TEST_ASSIGN')")
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getActiveTechnicians() {
+        List<UserResponse> users = userService.getActiveTechnicians();
+        return ResponseEntity.ok(ApiResponse.success(users, "Technicians retrieved successfully"));
+    }
+
     @GetMapping("/search")
+    @PreAuthorize("hasAuthority('USER_VIEW')")
     public ResponseEntity<ApiResponse<List<UserResponse>>> searchUsers(@RequestParam("query") String query) {
         List<UserResponse> users = userService.searchUsers(query);
         return ResponseEntity.ok(ApiResponse.success(users, "Users searched successfully"));
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('USER_VIEW')")
     public ResponseEntity<ApiResponse<UserResponse>> getUserById(@PathVariable("id") UUID id) {
         UserResponse user = userService.getUserById(id);
         return ResponseEntity.ok(ApiResponse.success(user, "User retrieved successfully"));
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('USER_CREATE')")
     public ResponseEntity<ApiResponse<UserResponse>> createUser(@Valid @RequestBody UserCreateRequest request) {
         UserResponse user = userService.createUser(request);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -50,6 +61,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('USER_EDIT')")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @PathVariable("id") UUID id,
             @Valid @RequestBody UserUpdateRequest request
@@ -59,12 +71,14 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('USER_DELETE')")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable("id") UUID id) {
         userService.deleteUser(id);
         return ResponseEntity.ok(ApiResponse.success(null, "User deleted successfully"));
     }
 
     @PutMapping("/{id}/password")
+    @PreAuthorize("hasAuthority('USER_EDIT')")
     public ResponseEntity<ApiResponse<Void>> updatePassword(
             @PathVariable("id") UUID id,
             @Valid @RequestBody PasswordUpdateRequest request

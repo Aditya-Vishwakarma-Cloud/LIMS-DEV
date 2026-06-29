@@ -38,10 +38,14 @@ public class JwtService {
 
     public String generateToken(User user) {
         Map<String, Object> extraClaims = new HashMap<>();
-        List<String> roles = user.getRoles().stream()
-                .map(role -> role.getName().name())
-                .collect(Collectors.toList());
-        extraClaims.put("roles", roles);
+        List<String> authorities = new java.util.ArrayList<>();
+        if (user.getRole() != null) {
+            authorities.add(user.getRole().getName());
+            if (user.getRole().getPermissions() != null) {
+                user.getRole().getPermissions().forEach(p -> authorities.add(p.getCode()));
+            }
+        }
+        extraClaims.put("roles", authorities);
         extraClaims.put("name", user.getName());
         extraClaims.put("status", user.getStatus().name());
         

@@ -16,4 +16,5 @@ public interface UserService {
     UserResponse updateUser(UUID id, UserUpdateRequest request);
     void deleteUser(UUID id);
     void updatePassword(UUID id, PasswordUpdateRequest request);
+    List<UserResponse> getActiveTechnicians();
 }

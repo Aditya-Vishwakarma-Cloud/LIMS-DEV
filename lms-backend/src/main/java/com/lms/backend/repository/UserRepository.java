@@ -20,4 +20,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("SELECT u FROM User u WHERE (LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%'))) AND u.deleted = false")
     List<User> searchUsers(@Param("query") String query);
+
+    @Query("SELECT u FROM User u WHERE u.role.name = :roleName AND u.status = :status AND u.deleted = false")
+    List<User> findByRoleAndStatusAndNotDeleted(
+            @Param("roleName") String roleName,
+            @Param("status") com.lms.backend.entity.AccountStatus status
+    );
 }
